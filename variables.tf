@@ -10,7 +10,6 @@ variable "secret_key" {  #Todo: uncomment the default value and add your secert 
 
 variable "number_of_worker" {
         description = "number of worker instances to be join on cluster."
-        default = 1
 }
 
 variable "region" {
@@ -25,4 +24,12 @@ variable "ami_id" {
 
 variable "instance_type" {
         default = "t2.medium" #the best type to start k8s with it,
+}
+
+variable "vpc_id" {
+  type = string
+}
+
+variable "subnet_ids" {
+  type = list(string)
 }
