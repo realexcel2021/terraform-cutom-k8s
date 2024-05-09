@@ -8,6 +8,11 @@ variable "secret_key" {  #Todo: uncomment the default value and add your secert 
         default = "" 
 }
 
+variable "session_token" {
+  type = string
+  description = "sesion token for temporary access"
+}
+
 variable "number_of_worker" {
         description = "number of worker instances to be join on cluster."
 }
