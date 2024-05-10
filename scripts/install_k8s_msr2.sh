@@ -1,16 +1,14 @@
 #!/bin/bash
 
-######### ** FOR WORKER NODE ** #########
+######### ** FOR 2nd master NODE ** #########
 
-hostname k8s-wrk-${worker_number}
-echo "k8s-wrk-${worker_number}" > /etc/hostname
+hostname k8s-msr-2
+echo "k8s-msr-2" > /etc/hostname
 
 export AWS_ACCESS_KEY_ID=${access_key}
 export AWS_SECRET_ACCESS_KEY=${private_key}
 export AWS_DEFAULT_REGION=${region}
 export AWS_SESSION_TOKEN=${session_token}
-
-
 
 apt update
 apt install apt-transport-https ca-certificates curl software-properties-common -y
@@ -76,7 +74,34 @@ sysctl --system
 # to insure the join command start when the installion of master node is done.
 sleep 1m
 
-aws s3 cp s3://${s3buckit_name}/join_worker_command.sh /tmp/.
-chmod +x /tmp/join_worker_command.sh
-sudo bash /tmp/join_worker_command.sh
+
+aws s3 cp s3://${s3buckit_name}/join_master_command.sh /tmp/.
+chmod +x /tmp/join_master_command.sh
+
+echo " --apiserver-advertise-address=$ipaddr" >> /tmp/join_master_command.sh
+
+# Remove the backslash character
+
+tr -s '\\' " " < /tmp/join_master_command.sh > /tmp/join_master_command_tmp.sh
+
+# add to single line
+
+#paste -s -d " " /tmp/join_master_command.sh > /tmp/join_master_command_tmp.sh && mv join_master_command_tmp.sh /tmp/join_master_command.sh
+
+paste -s -d " " /tmp/join_master_command_tmp.sh > /tmp/join_master_command_tmp2.sh
+
+sudo bash /tmp/join_master_command_tmp2.sh
+
+aws s3 cp /tmp/join_master_command_tmp2.sh s3://${s3buckit_name}
+
+#this adds .kube/config for root account, run same for ubuntu user, if you need it
+mkdir -p /root/.kube
+cp -i /etc/kubernetes/admin.conf /root/.kube/config
+cp -i /etc/kubernetes/admin.conf /tmp/admin.conf
+chmod 755 /tmp/admin.conf
+
+#Add kube config to ubuntu user.
+mkdir -p /home/ubuntu/.kube
+cp -i /etc/kubernetes/admin.conf /home/ubuntu/.kube/config
+chmod 755 /home/ubuntu/.kube/config
 

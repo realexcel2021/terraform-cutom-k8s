@@ -10,7 +10,6 @@ export AWS_SECRET_ACCESS_KEY=${private_key}
 export AWS_DEFAULT_REGION=${region}
 export AWS_SESSION_TOKEN=${session_token}
 
-
 apt update
 apt install apt-transport-https ca-certificates curl software-properties-common -y
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
@@ -69,15 +68,29 @@ EOF
 
 sysctl --system
 
+
+
 #Kubernetes cluster init
 #You can replace 172.16.0.0/16 with your desired pod network
-kubeadm init --apiserver-advertise-address=$ipaddr --pod-network-cidr=192.168.0.0/16 --apiserver-cert-extra-sans=$pubip > /tmp/restult.out
+kubeadm init --apiserver-advertise-address=$ipaddr --control-plane-endpoint="${loadbalancer_endpoint}:6443"  --pod-network-cidr=192.168.0.0/16 --apiserver-cert-extra-sans=$pubip > /tmp/restult.out
 # kubeadm init --apiserver-advertise-address=$ipaddr --apiserver-cert-extra-sans=$pubip > /tmp/restult.out
 cat /tmp/restult.out
 
+# get command to join cluster
+tail -2 /tmp/restult.out > /tmp/join_master_command.out
+get_certkey=$(sudo kubeadm init phase upload-certs --upload-certs | sed -n '$p')
+printf " --control-plane --certificate-key $get_certkey" >> /tmp/join_master_command.out
+cp /tmp/join_master_command.out /tmp/join_master_command.sh
+aws s3 cp /tmp/join_master_command.sh s3://${s3buckit_name}
+
 #to get join commdn
-tail -2 /tmp/restult.out > /tmp/join_command.sh;
-aws s3 cp /tmp/join_command.sh s3://${s3buckit_name};
+tail -2 /tmp/restult.out > /tmp/join_worker_command.sh;
+cat /tmp/join_master_command.out > /tmp/join_master_command.sh;
+aws s3 cp /tmp/join_worker_command.sh s3://${s3buckit_name};
+
+
+
+
 #this adds .kube/config for root account, run same for ubuntu user, if you need it
 mkdir -p /root/.kube;
 cp -i /etc/kubernetes/admin.conf /root/.kube/config;

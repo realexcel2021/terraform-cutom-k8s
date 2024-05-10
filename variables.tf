@@ -13,6 +13,11 @@ variable "session_token" {
   description = "sesion token for temporary access"
 }
 
+variable "private_ip_ha_proxy" {
+  type = string
+  description = "private ip address for ha proxy"
+}
+
 variable "number_of_worker" {
         description = "number of worker instances to be join on cluster."
 }
